@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice Creator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Lato:wght@300;400;700&family=Montserrat:wght@300;400;500;600;700;800&family=Open+Sans:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700;800&family=Roboto:wght@300;400;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="app-layout">
+        <div class="main-content">
+            <div class="app-container">
+                <header class="no-print">
+                    <div class="header-content">
+                        <div class="brand">
+                            <h1>Invoice Creator</h1>
+                            <p>Professional Invoicing made simple</p>
+                        </div>
+                        <div class="controls">
+                            <label for="templateSelector">Design:</label>
+                            <select id="templateSelector">
+                                <option value="modern">Modern</option>
+                                <option value="classic">Classic</option>
+                                <option value="corporate">Corporate</option>
+                                <option value="creative">Creative</option>
+                                <option value="minimal">Minimal</option>
+                            </select>
+                        </div>
+                        <div class="controls">
+                            <label for="currencySelector">Currency:</label>
+                            <select id="currencySelector">
+                                <option value="USD">USD ($)</option>
+                                <option value="EUR">EUR (€)</option>
+                                <option value="GBP">GBP (£)</option>
+                                <option value="JPY">JPY (¥)</option>
+                                <option value="CAD">CAD ($)</option>
+                                <option value="AUD">AUD ($)</option>
+                                <option value="CNY">CNY (¥)</option>
+                                <option value="INR">INR (₹)</option>
+                                <option value="MYR">MYR (RM)</option>
+                            </select>
+                        </div>
+                    </div>
+                </header>
+
+                <main class="invoice-paper">
+                    <!-- Watermark Overlay -->
+                    <div class="watermark-overlay" id="watermarkOverlay" style="display:none;">
+                        <span id="watermarkText">DRAFT</span>
+                    </div>
+                    <div class="invoice-top">
+                        <div class="company-section editable-section">
+                            <div class="company-header">
+                                <div class="company-logo" id="companyLogoDisplay" style="display:none;">
+                                    <img id="logoImage" src="" alt="Company Logo">
+                                </div>
+                                <div class="company-info">
+                                    <input type="text" id="companyName" placeholder="Your Company Name"
+                                        value="Tech Solutions Inc.">
+                                    <textarea id="companyDetails"
+                                        placeholder="123 Business Rd&#10;City, Country&#10;contact@example.com"
+                                        rows="3">123 Business Rd&#10;City, Country&#10;contact@example.com</textarea>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="invoice-title-block">
+                            <h2 id="invoiceTitleText">INVOICE</h2>
+                            <div class="meta-grid">
+                                <div class="meta-item">
+                                    <label>Invoice #</label>
+                                    <input type="text" id="invoiceNumber" value="INV-001">
+                                </div>
+                                <div class="meta-item">
+                                    <label>Date</label>
+                                    <input type="date" id="invoiceDate">
+                                </div>
+                                <div class="meta-item" id="dueDateRow">
+                                    <label>Due Date</label>
+                                    <input type="date" id="dueDate">
+                                </div>
+                                <div class="meta-item" id="poNumberRow">
+                                    <label>PO #</label>
+                                    <input type="text" id="poNumber" placeholder="Optional">
+                                </div>
+                                <div class="meta-item" id="salespersonRow" style="display:none;">
+                                    <label>Salesperson</label>
+                                    <input type="text" id="salesperson" placeholder="Name">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="addresses-section">
+                        <div class="bill-to-section editable-section">
+                            <h3>Bill To</h3>
+                            <input type="text" id="clientName" placeholder="Client Company Name">
+                            <textarea id="clientDetails" placeholder="Client Address&#10;City, Country"
+                                rows="3"></textarea>
+                        </div>
+                        <div class="ship-to-section editable-section" id="shipToSection" style="display:none;">
+                            <h3>Ship To</h3>
+                            <input type="text" id="shipToName" placeholder="Recipient Name">
+                            <textarea id="shipToDetails" placeholder="Shipping Address&#10;City, Country"
+                                rows="3"></textarea>
+                            <div class="same-as-billing no-print">
+                                <label><input type="checkbox" id="sameAsBilling"> Same as billing</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="items-section">
+                        <table id="itemsTable">
+                            <thead>
+                                <tr>
+                                    <th class="col-code" style="display:none;">Code</th>
+                                    <th class="col-desc">Description</th>
+                                    <th class="col-qty">Qty</th>
+                                    <th class="col-price">Price</th>
+                                    <th class="col-item-tax" style="display:none;">Tax %</th>
+                                    <th class="col-total">Amount</th>
+                                    <th class="col-action no-print"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="itemsList">
+                                <!-- Items will be added here -->
+                            </tbody>
+                        </table>
+                        <div class="item-buttons no-print">
+                            <button id="addItemBtn" class="btn btn-outlined">
+                                <span class="icon">+</span> Add Item
+                            </button>
+                        </div>
+
+                        <div class="totals-section">
+                            <div class="total-row">
+                                <span class="label">Subtotal</span>
+                                <span class="value" id="subtotalDisplay">$0.00</span>
+                            </div>
+                            <div class="total-row discount-row">
+                                <span class="label">Discount (%) <input type="number" id="discountRate" value="0"
+                                        min="0" max="100" step="0.5" class="discount-input"></span>
+                                <span class="value" id="discountDisplay">-$0.00</span>
+                            </div>
+                            <div class="total-row shipping-row" id="shippingTotalRow" style="display:none;">
+                                <span class="label">Shipping</span>
+                                <span class="value" id="shippingDisplay">$0.00</span>
+                            </div>
+                            <div class="total-row tax-row">
+                                <span class="label" id="taxLabelDisplay">Tax (%) <input type="number" id="taxRate"
+                                        value="0" min="0" step="0.1" class="tax-input"></span>
+                                <span class="value" id="taxDisplay">$0.00</span>
+                            </div>
+                            <div class="total-row grand-total">
+                                <span class="label">Total</span>
+                                <span class="value" id="grandTotalDisplay">$0.00</span>
+                            </div>
+                            <div class="add-adjustments no-print">
+                                <button id="addDiscountBtn" class="btn btn-outlined btn-discount btn-sm">
+                                    <span class="icon">%</span> Add Discount
+                                </button>
+                                <button id="addShippingBtn" class="btn btn-outlined btn-shipping btn-sm">
+                                    <span class="icon">📦</span> Add Shipping
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="invoice-footer">
+                        <div class="footer-grid">
+                            <!-- Notes Tabs -->
+                            <div class="notes-tabs-section">
+                                <div class="notes-tabs no-print">
+                                    <button class="notes-tab active" data-tab="public">Public Note</button>
+                                    <button class="notes-tab" data-tab="private">Private Note</button>
+                                    <button class="notes-tab" data-tab="footer">Footer Note</button>
+                                </div>
+                                <div class="notes-content">
+                                    <textarea id="publicNote" class="notes-field note-tab-content active"
+                                        placeholder="Thank you for your business. Payment is due within 30 days."></textarea>
+                                    <textarea id="privateNote" class="notes-field note-tab-content no-print"
+                                        placeholder="Internal notes (not visible on invoice)..."
+                                        style="display:none;"></textarea>
+                                    <textarea id="footerNote" class="notes-field note-tab-content footer-note"
+                                        placeholder="Terms & conditions, return policy, etc..."
+                                        style="display:none;"></textarea>
+                                </div>
+                            </div>
+                            <div class="payment-info-section" id="paymentInfoSection" style="display:none;">
+                                <h3>Payment Information</h3>
+                                <div class="payment-details">
+                                    <p><strong>Terms:</strong> <span id="paymentTermsDisplay">Net 30</span></p>
+                                    <p id="bankNameDisplay" style="display:none;"><strong>Bank:</strong> <span></span>
+                                    </p>
+                                    <p id="accountDisplay" style="display:none;"><strong>Account:</strong> <span></span>
+                                    </p>
+                                    <p id="routingDisplay" style="display:none;"><strong>Routing:</strong> <span></span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Footer Note Display (for print) -->
+                        <div class="footer-note-display" id="footerNoteDisplay"></div>
+                    </div>
+                </main>
+
+                <!-- Action Buttons -->
+                <div class="actions-bar no-print">
+                    <div class="actions-left">
+                        <button id="clearBtn" class="btn btn-secondary">🗑️ Clear Invoice</button>
+                    </div>
+                    <div class="actions-right">
+                        <button id="previewBtn" class="btn btn-secondary">👁️ Preview</button>
+                        <button id="emailBtn" class="btn btn-secondary">📧 Email</button>
+                        <button id="printBtn" class="btn btn-primary">📥 Save as PDF</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preview Modal -->
+        <div class="modal-overlay" id="previewModal" style="display:none;">
+            <div class="modal-container preview-modal">
+                <div class="modal-header">
+                    <h3>Invoice Preview</h3>
+                    <button class="modal-close" id="closePreview">&times;</button>
+                </div>
+                <div class="modal-body" id="previewContent">
+                    <!-- Preview content will be injected here -->
+                </div>
+                <div class="modal-footer">
+                    <button id="previewPrint" class="btn btn-primary">📥 Save as PDF</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Email Modal -->
+        <div class="modal-overlay" id="emailModal" style="display:none;">
+            <div class="modal-container email-modal">
+                <div class="modal-header">
+                    <h3>📧 Email Invoice</h3>
+                    <button class="modal-close" id="closeEmail">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="emailTo">To:</label>
+                        <input type="email" id="emailTo" class="modal-input" placeholder="client@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label for="emailSubject">Subject:</label>
+                        <input type="text" id="emailSubject" class="modal-input"
+                            value="Invoice from Tech Solutions Inc.">
+                    </div>
+                    <div class="form-group">
+                        <label for="emailMessage">Message:</label>
+                        <textarea id="emailMessage" class="modal-input modal-textarea"
+                            rows="4">Please find attached your invoice. Thank you for your business!</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="cancelEmail" class="btn btn-secondary">Cancel</button>
+                    <button id="sendEmail" class="btn btn-primary">Send Invoice</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Properties Toolbox Panel -->
+        <aside class="toolbox-panel no-print" id="toolboxPanel">
+            <div class="toolbox-header">
+                <h3>⚙️ Properties</h3>
+                <button class="toolbox-toggle" id="toolboxToggle" title="Toggle Panel">◀</button>
+            </div>
+
+            <div class="toolbox-content">
+                <!-- Document Settings Section -->
+                <div class="toolbox-section">
+                    <h4>📄 Document Settings</h4>
+                    <div class="property-group">
+                        <label for="documentType">Document Type</label>
+                        <select id="documentType" class="toolbox-select">
+                            <option value="INVOICE">Invoice</option>
+                            <option value="QUOTE">Quote</option>
+                            <option value="ESTIMATE">Estimate</option>
+                            <option value="RECEIPT">Receipt</option>
+                            <option value="PROFORMA">Proforma Invoice</option>
+                            <option value="CREDIT NOTE">Credit Note</option>
+                        </select>
+                    </div>
+                    <div class="property-group">
+                        <label for="invoicePrefix">Number Prefix</label>
+                        <input type="text" id="invoicePrefix" class="toolbox-input" value="INV-" placeholder="INV-">
+                    </div>
+                    <div class="property-group">
+                        <label for="dateFormat">Date Format</label>
+                        <select id="dateFormat" class="toolbox-select">
+                            <option value="default">Browser Default</option>
+                            <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                            <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                            <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                            <option value="DD MMM YYYY">DD MMM YYYY</option>
+                        </select>
+                    </div>
+                    <div class="property-group checkbox-group">
+                        <label>
+                            <input type="checkbox" id="showDueDate" checked>
+                            <span>Show due date</span>
+                        </label>
+                    </div>
+                    <div class="property-group checkbox-group">
+                        <label>
+                            <input type="checkbox" id="autoNumbering">
+                            <span>Auto-increment number</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Watermark Section -->
+                <div class="toolbox-section">
+                    <h4>💧 Watermark</h4>
+                    <div class="property-group checkbox-group">
+                        <label>
+                            <input type="checkbox" id="enableWatermark">
+                            <span>Enable watermark</span>
+                        </label>
+                    </div>
+                    <div class="property-group">
+                        <label for="watermarkType">Watermark Text</label>
+                        <select id="watermarkType" class="toolbox-select">
+                            <option value="DRAFT">DRAFT</option>
+                            <option value="PAID">PAID</option>
+                            <option value="CANCELLED">CANCELLED</option>
+                            <option value="CONFIDENTIAL">CONFIDENTIAL</option>
+                            <option value="COPY">COPY</option>
+                            <option value="SAMPLE">SAMPLE</option>
+                            <option value="custom">Custom...</option>
+                        </select>
+                    </div>
+                    <div class="property-group" id="customWatermarkGroup" style="display:none;">
+                        <input type="text" id="customWatermark" class="toolbox-input"
+                            placeholder="Custom watermark text">
+                    </div>
+                    <div class="property-group">
+                        <label for="watermarkColor">Watermark Color</label>
+                        <input type="color" id="watermarkColor" value="#ef4444">
+                    </div>
+                    <div class="property-group">
+                        <label for="watermarkOpacity">Opacity</label>
+                        <div class="slider-group">
+                            <input type="range" id="watermarkOpacity" min="5" max="50" step="5" value="15">
+                            <span class="slider-value" id="watermarkOpacityVal">15%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Logo Upload Section -->
+                <div class="toolbox-section">
+                    <h4>🖼️ Company Logo</h4>
+                    <div class="property-group">
+                        <div class="logo-upload-area" id="logoUploadArea">
+                            <input type="file" id="logoInput" accept="image/*" hidden>
+                            <div class="logo-preview" id="logoPreview">
+                                <span class="upload-placeholder">📷 Click to upload logo</span>
+                            </div>
+                            <button class="btn-small" id="removeLogo" style="display:none;">Remove Logo</button>
+                        </div>
+                    </div>
+                    <div class="property-group">
+                        <label for="logoSize">Logo Size</label>
+                        <div class="slider-group">
+                            <input type="range" id="logoSize" min="40" max="120" step="5" value="80">
+                            <span class="slider-value" id="logoSizeVal">80px</span>
+                        </div>
+                    </div>
+                    <div class="property-group">
+                        <label for="logoPosition">Logo Position</label>
+                        <select id="logoPosition" class="toolbox-select">
+                            <option value="left">Left of Company Name</option>
+                            <option value="top">Above Company Name</option>
+                            <option value="right">Right Side</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Font Family Section -->
+                <div class="toolbox-section">
+                    <h4>🔤 Font Family</h4>
+                    <div class="property-group">
+                        <label for="fontFamily">Primary Font</label>
+                        <select id="fontFamily" class="toolbox-select">
+                            <option value="'Outfit', sans-serif">Outfit (Default)</option>
+                            <option value="'Inter', sans-serif">Inter</option>
+                            <option value="'Roboto', sans-serif">Roboto</option>
+                            <option value="'Open Sans', sans-serif">Open Sans</option>
+                            <option value="'Poppins', sans-serif">Poppins</option>
+                            <option value="'Montserrat', sans-serif">Montserrat</option>
+                            <option value="'Lato', sans-serif">Lato</option>
+                            <option value="Georgia, serif">Georgia (Serif)</option>
+                            <option value="'Times New Roman', serif">Times New Roman</option>
+                            <option value="'Courier New', monospace">Courier New</option>
+                        </select>
+                    </div>
+                    <div class="property-group">
+                        <label for="headingWeight">Heading Weight</label>
+                        <select id="headingWeight" class="toolbox-select">
+                            <option value="400">Light (400)</option>
+                            <option value="500">Medium (500)</option>
+                            <option value="600">Semi-Bold (600)</option>
+                            <option value="700" selected>Bold (700)</option>
+                            <option value="800">Extra Bold (800)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Typography Section -->
+                <div class="toolbox-section">
+                    <h4>📏 Typography</h4>
+
+                    <div class="property-group">
+                        <label for="companyNameSize">Company Name Size</label>
+                        <div class="slider-group">
+                            <input type="range" id="companyNameSize" min="1" max="3" step="0.1" value="2">
+                            <span class="slider-value" id="companyNameSizeVal">2rem</span>
+                        </div>
+                    </div>
+
+                    <div class="property-group">
+                        <label for="bodyTextSize">Body Text Size</label>
+                        <div class="slider-group">
+                            <input type="range" id="bodyTextSize" min="0.75" max="1.25" step="0.05" value="0.95">
+                            <span class="slider-value" id="bodyTextSizeVal">0.95rem</span>
+                        </div>
+                    </div>
+
+                    <div class="property-group">
+                        <label for="invoiceTitleSize">Title Size</label>
+                        <div class="slider-group">
+                            <input type="range" id="invoiceTitleSize" min="2" max="4" step="0.1" value="3">
+                            <span class="slider-value" id="invoiceTitleSizeVal">3rem</span>
+                        </div>
+                    </div>
+
+                    <div class="property-group">
+                        <label for="lineHeight">Line Height</label>
+                        <div class="slider-group">
+                            <input type="range" id="lineHeight" min="1" max="2" step="0.1" value="1.6">
+                            <span class="slider-value" id="lineHeightVal">1.6</span>
+                        </div>
+                    </div>
+
+                    <div class="property-group">
+                        <label for="letterSpacing">Letter Spacing</label>
+                        <div class="slider-group">
+                            <input type="range" id="letterSpacing" min="-1" max="3" step="0.25" value="0">
+                            <span class="slider-value" id="letterSpacingVal">0px</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Colors Section -->
+                <div class="toolbox-section">
+                    <h4>🎨 Colors</h4>
+
+                    <div class="color-grid">
+                        <div class="property-group">
+                            <label for="accentColor">Accent</label>
+                            <input type="color" id="accentColor" value="#2563eb">
+                        </div>
+
+                        <div class="property-group">
+                            <label for="textColor">Text</label>
+                            <input type="color" id="textColor" value="#1e293b">
+                        </div>
+
+                        <div class="property-group">
+                            <label for="bgColor">Background</label>
+                            <input type="color" id="bgColor" value="#f8fafc">
+                        </div>
+
+                        <div class="property-group">
+                            <label for="paperColor">Paper</label>
+                            <input type="color" id="paperColor" value="#ffffff">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Table Styling Section -->
+                <div class="toolbox-section">
+                    <h4>📊 Table Styling</h4>
+
+                    <div class="property-group">
+                        <label for="tableHeaderBg">Header Background</label>
+                        <input type="color" id="tableHeaderBg" value="#f1f5f9">
+                    </div>
+
+                    <div class="property-group">
+                        <label for="tableHeaderText">Header Text</label>
+                        <input type="color" id="tableHeaderText" value="#64748b">
+                    </div>
+
+                    <div class="property-group">
+                        <label for="tableAltRow">Alternate Row</label>
+                        <input type="color" id="tableAltRow" value="#fafafa">
+                    </div>
+
+                    <div class="property-group checkbox-group">
+                        <label>
+                            <label for="paperPadding">Paper Padding</label>
+                            <div class="slider-group">
+                                <input type="range" id="paperPadding" min="2" max="6" step="0.5" value="4">
+                                <span class="slider-value" id="paperPaddingVal">4rem</span>
+                            </div>
+                    </div>
+
+                    <div class="property-group">
+                        <label for="sectionSpacing">Section Spacing</label>
+                        <div class="slider-group">
+                            <input type="range" id="sectionSpacing" min="1" max="5" step="0.5" value="3">
+                            <span class="slider-value" id="sectionSpacingVal">3rem</span>
+                        </div>
+                    </div>
+
+                    <div class="property-group">
+                        <label for="tableRowPadding">Table Row Padding</label>
+                        <div class="slider-group">
+                            <input type="range" id="tableRowPadding" min="0.5" max="2" step="0.25" value="1">
+                            <span class="slider-value" id="tableRowPaddingVal">1rem</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Border Section -->
+                <div class="toolbox-section">
+                    <h4>✨ Border & Effects</h4>
+
+                    <div class="property-group">
+                        <label for="borderWidth">Top Border Width</label>
+                        <div class="slider-group">
+                            <input type="range" id="borderWidth" min="0" max="12" step="1" value="8">
+                            <span class="slider-value" id="borderWidthVal">8px</span>
+                        </div>
+                    </div>
+
+                    <div class="property-group">
+                        <label for="borderRadius">Corner Radius</label>
+                        <div class="slider-group">
+                            <input type="range" id="borderRadius" min="0" max="24" step="2" value="12">
+                            <span class="slider-value" id="borderRadiusVal">12px</span>
+                        </div>
+                    </div>
+
+                    <div class="property-group">
+                        <label for="shadowIntensity">Shadow Intensity</label>
+                        <div class="slider-group">
+                            <input type="range" id="shadowIntensity" min="0" max="100" step="5" value="50">
+                            <span class="slider-value" id="shadowIntensityVal">50%</span>
+                        </div>
+                    </div>
+
+                    <div class="property-group">
+                        <label for="borderStyle">Border Style</label>
+                        <select id="borderStyle" class="toolbox-select">
+                            <option value="solid">Solid</option>
+                            <option value="double">Double</option>
+                            <option value="groove">Groove</option>
+                            <option value="ridge">Ridge</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Payment Details Section -->
+                <div class="toolbox-section">
+                    <h4>💳 Payment Details</h4>
+
+                    <div class="property-group">
+                        <label for="paymentTerms">Payment Terms</label>
+                        <select id="paymentTerms" class="toolbox-select">
+                            <option value="Due on Receipt">Due on Receipt</option>
+                            <option value="Net 15">Net 15</option>
+                            <option value="Net 30" selected>Net 30</option>
+                            <option value="Net 45">Net 45</option>
+                            <option value="Net 60">Net 60</option>
+                            <option value="Custom">Custom</option>
+                        </select>
+                    </div>
+
+                    <div class="property-group checkbox-group">
+                        <label>
+                            <input type="checkbox" id="showPaymentInfo">
+                            <span>Show bank details</span>
+                        </label>
+                    </div>
+
+                    <div class="property-group bank-details-group" id="bankDetailsGroup" style="display:none;">
+                        <input type="text" id="bankName" class="toolbox-input" placeholder="Bank Name">
+                        <input type="text" id="accountNumber" class="toolbox-input" placeholder="Account Number">
+                        <input type="text" id="routingNumber" class="toolbox-input" placeholder="Routing/SWIFT">
+                    </div>
+                </div>
+
+                <!-- Quick Presets Section -->
+                <div class="toolbox-section">
+                    <h4>🎯 Quick Presets</h4>
+                    <div class="preset-buttons">
+                        <button class="preset-btn" data-preset="professional">Professional</button>
+                        <button class="preset-btn" data-preset="colorful">Colorful</button>
+                        <button class="preset-btn" data-preset="elegant">Elegant</button>
+                        <button class="preset-btn" data-preset="bold">Bold</button>
+                    </div>
+                </div>
+
+                <!-- Reset Button -->
+                <div class="toolbox-section">
+                    <button id="resetProperties" class="btn btn-outlined toolbox-reset">
+                        🔄 Reset to Default
+                    </button>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
