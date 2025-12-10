@@ -5,623 +5,962 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Invoice Creator</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Lato:wght@300;400;700&family=Montserrat:wght@300;400;500;600;700;800&family=Open+Sans:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700;800&family=Roboto:wght@300;400;500;700&display=swap"
-        rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <!-- EmailJS for sending real emails -->
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 </head>
 
 <body>
-    <div class="app-layout">
-        <div class="main-content">
-            <div class="app-container">
-                <header class="no-print">
-                    <div class="header-content">
-                        <div class="brand">
-                            <h1>Invoice Creator</h1>
-                            <p>Professional Invoicing made simple</p>
+    <div class="app-container">
+        <!-- Invoice Paper -->
+        <div class="invoice-paper" id="invoicePaper">
+
+            <!-- Top Section: Company Left, Invoice Info Right -->
+            <div class="invoice-top">
+                <!-- Left: Logo + Business Info -->
+                <div class="left-section">
+                    <div class="logo-box" id="logoBox">
+                        <input type="file" id="logoInput" accept="image/*" hidden>
+                        <div class="logo-placeholder" id="logoPlaceholder">
+                            <span>+ Add a logo</span>
                         </div>
-                        <div class="controls">
-                            <label for="templateSelector">Design:</label>
-                            <select id="templateSelector">
-                                <option value="modern">Modern</option>
-                                <option value="classic">Classic</option>
-                                <option value="corporate">Corporate</option>
-                                <option value="creative">Creative</option>
-                                <option value="minimal">Minimal</option>
+                        <img id="logoImage" src="" alt="Logo" style="display:none;">
+                    </div>
+                    <input type="text" id="businessName" class="business-name" placeholder="Business Name">
+                    <textarea id="businessAddress" class="business-address" placeholder="Business Address"
+                        rows="2"></textarea>
+                </div>
+
+                <!-- Right: Invoice Details -->
+                <div class="right-section">
+                    <div class="info-row">
+                        <label>Date:</label>
+                        <input type="date" id="invoiceDate">
+                    </div>
+                    <div class="info-row">
+                        <label>Invoice Number:</label>
+                        <input type="text" id="invoiceNumber" value="10000">
+                    </div>
+                    <div class="info-row">
+                        <label>Payment Terms:</label>
+                        <select id="paymentTerms">
+                            <option value="pay-in-days">Pay in Days</option>
+                            <option value="due-on-receipt">Due on Receipt</option>
+                            <option value="net-15">Net 15</option>
+                            <option value="net-30">Net 30</option>
+                        </select>
+                        <input type="number" id="paymentDays" class="days-input" value="30" min="0">
+                    </div>
+                    <div class="info-row">
+                        <label>Purchase Order #:</label>
+                        <input type="text" id="purchaseOrder" placeholder="Optional">
+                    </div>
+                    <div class="info-row">
+                        <label>Salesperson:</label>
+                        <input type="text" id="salesperson" placeholder="Optional">
+                    </div>
+                    <div class="info-row">
+                        <label>Shipping Address:</label>
+                        <input type="text" id="shippingAddress" placeholder="Leave blank if same as Billing Address">
+                    </div>
+                    <a href="#" class="add-fields-link" id="addFieldsLink">+ Add Other Invoice Fields</a>
+                    <!-- Extra Fields (Hidden by default) -->
+                    <div class="extra-fields" id="extraFields" style="display:none;">
+                        <div class="info-row">
+                            <label>Tax ID:</label>
+                            <input type="text" id="taxId" placeholder="Optional">
+                        </div>
+                        <div class="info-row">
+                            <label>Project:</label>
+                            <input type="text" id="project" placeholder="Optional">
+                        </div>
+                        <div class="info-row">
+                            <label>Currency:</label>
+                            <select id="currency">
+                                <option value="RM">RM (MYR)</option>
+                                <option value="$">$ (USD)</option>
+                                <option value="€">€ (EUR)</option>
+                                <option value="£">£ (GBP)</option>
                             </select>
                         </div>
-                        <div class="controls">
-                            <label for="currencySelector">Currency:</label>
-                            <select id="currencySelector">
-                                <option value="USD">USD ($)</option>
-                                <option value="EUR">EUR (€)</option>
-                                <option value="GBP">GBP (£)</option>
-                                <option value="JPY">JPY (¥)</option>
-                                <option value="CAD">CAD ($)</option>
-                                <option value="AUD">AUD ($)</option>
-                                <option value="CNY">CNY (¥)</option>
-                                <option value="INR">INR (₹)</option>
-                                <option value="MYR">MYR (RM)</option>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer Section -->
+            <div class="customer-section">
+                <div class="customer-row">
+                    <label>Customer:</label>
+                    <select id="customerSelect">
+                        <option value=""></option>
+                    </select>
+                </div>
+                <div class="billing-row">
+                    <label>Billing Address:</label>
+                    <textarea id="billingAddress" rows="2"></textarea>
+                </div>
+            </div>
+
+            <!-- Items Table -->
+            <div class="items-section">
+                <table class="items-table" id="itemsTable">
+                    <thead>
+                        <tr>
+                            <th class="col-qty">
+                                <select class="header-select">
+                                    <option>Qty</option>
+                                    <option>Hours</option>
+                                </select>
+                            </th>
+                            <th class="col-code">
+                                <select class="header-select">
+                                    <option>Item Code</option>
+                                    <option>SKU</option>
+                                </select>
+                            </th>
+                            <th class="col-desc">
+                                <select class="header-select">
+                                    <option>Description</option>
+                                    <option>Service</option>
+                                </select>
+                            </th>
+                            <th class="col-price">
+                                <select class="header-select">
+                                    <option>Unit Price</option>
+                                    <option>Rate</option>
+                                </select>
+                            </th>
+                            <th class="col-tax">
+                                <select class="header-select">
+                                    <option>Tax</option>
+                                    <option>VAT</option>
+                                </select>
+                            </th>
+                            <th class="col-total">
+                                <select class="header-select">
+                                    <option>Total</option>
+                                    <option>Amount</option>
+                                </select>
+                            </th>
+                            <th class="col-action"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="itemsBody">
+                        <!-- Items will be added here -->
+                    </tbody>
+                </table>
+
+                <!-- Item Buttons -->
+                <div class="item-buttons">
+                    <button id="addItemBtn" class="btn btn-add-item">+ Add Item</button>
+                    <button id="addDiscountBtn" class="btn btn-add-discount">+ Add Discount</button>
+                    <button id="addShippingBtn" class="btn btn-add-shipping">+ Add Shipping</button>
+                </div>
+            </div>
+
+            <!-- Notes and Totals Row -->
+            <div class="notes-totals-row">
+                <!-- Notes Section -->
+                <div class="notes-section">
+                    <div class="notes-tabs">
+                        <button class="tab active" data-tab="public">Public Note</button>
+                        <button class="tab" data-tab="private">Private Note</button>
+                        <button class="tab" data-tab="foot">Foot Note</button>
+                    </div>
+                    <div class="notes-content">
+                        <textarea id="publicNote" class="note-textarea active" placeholder=""></textarea>
+                        <textarea id="privateNote" class="note-textarea" style="display:none;"></textarea>
+                        <textarea id="footNote" class="note-textarea" style="display:none;"></textarea>
+                    </div>
+                </div>
+
+                <!-- Totals Section -->
+                <div class="totals-section">
+                    <div class="total-row">
+                        <span class="label">Subtotal:</span>
+                        <span class="value" id="subtotalDisplay">RM0.00</span>
+                    </div>
+                    <div class="total-row total-final">
+                        <span class="label">Total:</span>
+                        <span class="value" id="totalDisplay">RM0.00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <div class="left-buttons">
+                    <button id="feedbackBtn" class="btn btn-feedback">✉ Send Feedback</button>
+                </div>
+                <div class="right-buttons">
+                    <button id="clearBtn" class="btn btn-secondary">Clear Invoice</button>
+                    <button id="previewBtn" class="btn btn-secondary">Preview Invoice</button>
+                    <div class="save-dropdown" id="saveDropdown">
+                        <button id="saveBtn" class="btn btn-primary">Save and Download</button>
+                        <button class="btn btn-primary dropdown-arrow" id="saveDropdownBtn">▼</button>
+                        <div class="save-dropdown-menu" id="saveDropdownMenu">
+                            <a href="#" data-action="create">Create Invoice</a>
+                            <a href="#" data-action="email">Create and Email</a>
+                            <a href="#" data-action="print">Create and Print</a>
+                            <a href="#" data-action="recurring">Create as Recurring</a>
+                            <a href="#" data-action="draft">Create as Draft</a>
+                            <a href="#" data-action="preview">Create and Preview</a>
+                            <a href="#" data-action="payment">Create and Apply Payment</a>
+                            <a href="#" data-action="download">Save and Download</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preview Modal -->
+    <div class="modal-overlay" id="previewModal" style="display:none;">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3>Invoice Preview</h3>
+                <button class="modal-close" id="closePreview">&times;</button>
+            </div>
+            <div class="modal-body" id="previewContent">
+                <!-- Preview content will be injected here -->
+            </div>
+            <div class="modal-footer">
+                <button id="printBtn" class="btn btn-primary">📥 Save as PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Discount Modal (Apply Discount) -->
+    <div class="modal-overlay" id="discountModal" style="display:none;">
+        <div class="modal-container modal-medium" style="max-width: 450px;">
+            <div class="modal-header">
+                <h3>Apply Discount</h3>
+                <button class="modal-close" id="closeDiscount">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Fixed flat discount -->
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="radio" name="discountType" value="flat" checked>
+                        Fixed flat discount to the whole invoice
+                    </label>
+                    <div style="display: flex; align-items: center; gap: 20px; margin-top: 8px; margin-left: 25px;">
+                        <span style="color: #999;">Discount Amount:</span>
+                        <input type="number" id="flatDiscount" value="10.00" min="0" step="0.01"
+                            style="width: 100px; padding: 8px; border: 1px solid #ccc; text-align: right;">
+                    </div>
+                </div>
+
+                <!-- Fixed percentage discount -->
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="radio" name="discountType" value="percent">
+                        Fixed percentage discount to the whole invoice
+                    </label>
+                    <div style="display: flex; align-items: center; gap: 20px; margin-top: 8px; margin-left: 25px;">
+                        <span style="color: #999;">Discount Percent:</span>
+                        <input type="text" id="percentDiscount" value="0%"
+                            style="width: 100px; padding: 8px; border: 1px solid #ccc; text-align: right;">
+                    </div>
+                </div>
+
+                <!-- Line-by-line discount -->
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="radio" name="discountType" value="line">
+                        Apply line-by-line discounts to specific items
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="applyDiscount" class="btn btn-primary" style="background: #449d44;">Apply</button>
+                <button id="cancelDiscount" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Email Modal -->
+    <div class="modal-overlay" id="emailModal" style="display:none;">
+        <div class="modal-container modal-small">
+            <div class="modal-header">
+                <h3>Send Invoice by Email</h3>
+                <button class="modal-close" id="closeEmail">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Recipient Email:</label>
+                    <input type="email" id="recipientEmail" placeholder="customer@example.com"
+                        style="width: 100%; padding: 8px; margin-top: 5px;">
+                </div>
+                <div class="form-group" style="margin-top: 10px;">
+                    <label>Your Email:</label>
+                    <input type="email" id="senderEmail" placeholder="your@email.com"
+                        style="width: 100%; padding: 8px; margin-top: 5px;">
+                </div>
+                <div class="form-group" style="margin-top: 10px;">
+                    <label>Message (optional):</label>
+                    <textarea id="emailMessage" rows="3" placeholder="Additional message..."
+                        style="width: 100%; padding: 8px; margin-top: 5px;"></textarea>
+                </div>
+                <div id="emailStatus" style="margin-top: 10px; font-size: 12px;"></div>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelEmail" class="btn btn-secondary">Cancel</button>
+                <button id="sendEmail" class="btn btn-primary">📧 Send Email</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Item Modal -->
+    <div class="modal-overlay" id="newItemModal" style="display:none;">
+        <div class="modal-container modal-medium">
+            <div class="modal-header">
+                <h3>New Item</h3>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <a href="#" style="font-size: 12px;">Help</a>
+                    <button class="modal-close" id="closeNewItem">&times;</button>
+                </div>
+            </div>
+            <div class="modal-body" style="max-height: 500px; overflow-y: auto;">
+                <div class="form-group">
+                    <label>Item Code:</label>
+                    <input type="text" id="newItemCode"
+                        style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc;">
+                </div>
+                <div class="form-group" style="margin-top: 10px;">
+                    <label>Description:</label>
+                    <textarea id="newItemDescription" rows="4"
+                        style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc;"></textarea>
+                </div>
+                <div class="form-group" style="margin-top: 10px;">
+                    <label>Unit Value:</label>
+                    <input type="text" id="newItemUnitValue" value="RM0.00"
+                        style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc;">
+                </div>
+                <div class="form-group" style="margin-top: 10px;">
+                    <label>Tax:</label>
+                    <select id="newItemTax" style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc;">
+                        <option value="0">[None]</option>
+                        <option value="6">SST 6%</option>
+                        <option value="10">Tax 10%</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin-top: 15px;">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="manageInventory">
+                        Manage the inventory stock levels
+                    </label>
+                </div>
+                <div class="form-group" style="margin-top: 10px;">
+                    <label>Current Quantity:</label>
+                    <input type="number" id="currentQuantity"
+                        style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; background: #f5f5f5;">
+                </div>
+                <div class="form-group" style="margin-top: 10px;">
+                    <label>Ideal Quantity:</label>
+                    <input type="number" id="idealQuantity"
+                        style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; background: #f5f5f5;">
+                </div>
+                <div class="form-group" style="margin-top: 10px;">
+                    <label>Warning Quantity:</label>
+                    <input type="number" id="warningQuantity"
+                        style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; background: #f5f5f5;">
+                </div>
+                <div class="form-group" style="margin-top: 10px;">
+                    <label>Supplier:</label>
+                    <select id="newItemSupplier"
+                        style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc;">
+                        <option value="">Select Supplier</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin-top: 10px;">
+                    <label>Note:</label>
+                    <textarea id="newItemNote" rows="2"
+                        style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc;"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="createNewItem" class="btn btn-primary" style="background: #449d44;">Create Item</button>
+                <button id="cancelNewItem" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Tax Modal -->
+    <div class="modal-overlay" id="newTaxModal" style="display:none;">
+        <div class="modal-container modal-medium">
+            <div class="modal-header">
+                <h3>New Tax</h3>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <a href="#" style="font-size: 12px;">Help</a>
+                    <button class="modal-close" id="closeNewTax">&times;</button>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div class="form-group" style="display: flex; align-items: center; gap: 20px;">
+                    <label style="min-width: 120px;">Tax Name:</label>
+                    <input type="text" id="newTaxName" style="flex: 1; padding: 8px; border: 1px solid #ccc;">
+                </div>
+                <div class="form-group" style="margin-top: 15px; display: flex; align-items: center; gap: 20px;">
+                    <label style="min-width: 120px; display: flex; align-items: center; gap: 5px;">
+                        <input type="radio" name="taxType" value="simple" checked id="taxTypeSimple">
+                        Tax Rate(%):
+                    </label>
+                    <input type="number" id="newTaxRate" step="0.01"
+                        style="flex: 1; padding: 8px; border: 1px solid #ccc;">
+                </div>
+                <div class="form-group" style="margin-top: 10px;">
+                    <label style="display: flex; align-items: center; gap: 5px;">
+                        <input type="radio" name="taxType" value="combined" id="taxTypeCombined">
+                        Combined Tax Rate:
+                    </label>
+                </div>
+                <div class="form-group" style="margin-top: 10px; display: flex; align-items: center; gap: 20px;">
+                    <label style="min-width: 120px;">Tax Rate 1:</label>
+                    <select id="taxRate1" style="flex: 1; padding: 8px; border: 1px solid #ccc;">
+                        <option value="">[None]</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin-top: 10px; display: flex; align-items: center; gap: 20px;">
+                    <label style="min-width: 120px;">Tax Rate 2:</label>
+                    <select id="taxRate2" style="flex: 1; padding: 8px; border: 1px solid #ccc;">
+                        <option value="">[None]</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin-top: 15px;">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="taxCompounding">
+                        Compounding (Rate 2 is applied after Rate 1)
+                    </label>
+                </div>
+                <div class="form-group" style="margin-top: 10px;">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="taxDefault">
+                        Use this as my default tax rate
+                    </label>
+                </div>
+                <div class="form-group" style="margin-top: 10px;">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="taxShowZero">
+                        Show zero percent
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="saveTax" class="btn btn-primary" style="background: #449d44;">Save Tax</button>
+                <button id="cancelNewTax" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Customer Modal -->
+    <div class="modal-overlay" id="newCustomerModal" style="display:none;">
+        <div class="modal-container modal-large">
+            <div class="modal-header">
+                <h3>New Customer</h3>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <a href="#" style="font-size: 12px;">Help</a>
+                    <button class="modal-close" id="closeNewCustomer">&times;</button>
+                </div>
+            </div>
+            <div class="modal-body" style="max-height: 500px; overflow-y: auto;">
+                <!-- Row 1: Customer Name, Email, Telephone -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                    <div class="form-group">
+                        <label>Customer Name:</label>
+                        <input type="text" id="newCustomerName" placeholder="Enter customer name"
+                            style="width: 100%; padding: 8px; border: 1px solid #ccc;">
+                    </div>
+                    <div class="form-group">
+                        <label>Email:</label>
+                        <input type="email" id="newCustomerEmail" placeholder="jane.doe@acme.com"
+                            style="width: 100%; padding: 8px; border: 1px solid #ccc;">
+                    </div>
+                    <div class="form-group">
+                        <label>Telephone:</label>
+                        <input type="text" id="newCustomerTelephone" placeholder="555 123 4567"
+                            style="width: 100%; padding: 8px; border: 1px solid #ccc;">
+                    </div>
+                </div>
+
+                <!-- Row 2: Contact person, Salesperson, Group -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-top: 15px;">
+                    <div class="form-group">
+                        <label>Contact person (optional):</label>
+                        <input type="text" id="newCustomerContact" placeholder="Enter the contact name"
+                            style="width: 100%; padding: 8px; border: 1px solid #ccc;">
+                    </div>
+                    <div class="form-group">
+                        <label>Salesperson:</label>
+                        <select id="newCustomerSalesperson" style="width: 100%; padding: 8px; border: 1px solid #ccc;">
+                            <option value="">Optional</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Group:</label>
+                        <select id="newCustomerGroup" style="width: 100%; padding: 8px; border: 1px solid #ccc;">
+                            <option value="">Select Group</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Row 3: Billing Address, Shipping Address, Active checkbox -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-top: 15px;">
+                    <div class="form-group">
+                        <label>Billing Address:</label>
+                        <textarea id="newCustomerBillingAddress" rows="3" placeholder="Enter address"
+                            style="width: 100%; padding: 8px; border: 1px solid #ccc;"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Shipping Address:</label>
+                        <textarea id="newCustomerShippingAddress" rows="3"
+                            placeholder="Leave blank to use Billing Address"
+                            style="width: 100%; padding: 8px; border: 1px solid #ccc;"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label style="display: flex; align-items: center; gap: 8px; margin-top: 20px;">
+                            <input type="checkbox" id="customerActive" checked>
+                            This customer is active
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Row 4: Notes and Right side info -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;">
+                    <div>
+                        <!-- Notes tabs -->
+                        <div style="display: flex; gap: 0;">
+                            <button type="button" class="customer-note-tab active" data-tab="private"
+                                style="padding: 8px 15px; border: 1px solid #ccc; background: white; cursor: pointer;">Private
+                                Note</button>
+                            <button type="button" class="customer-note-tab" data-tab="statement"
+                                style="padding: 8px 15px; border: 1px solid #ccc; background: #f5f5f5; cursor: pointer;">Statement
+                                Foot Note</button>
+                        </div>
+                        <textarea id="customerPrivateNote" rows="3" placeholder="Note for internal use only"
+                            style="width: 100%; padding: 8px; border: 1px solid #ccc; margin-top: -1px;"></textarea>
+                        <textarea id="customerStatementNote" rows="3"
+                            placeholder="This note is not visible on the Statement"
+                            style="width: 100%; padding: 8px; border: 1px solid #ccc; display: none;"></textarea>
+                    </div>
+                    <div>
+                        <div class="form-group">
+                            <label>Additional Printed Info:</label>
+                            <input type="text" id="customerAdditionalInfo" placeholder="ABN: 66 012 345 678"
+                                style="width: 100%; padding: 8px; border: 1px solid #ccc;">
+                        </div>
+                        <div class="form-group" style="margin-top: 10px;">
+                            <label>Payment Terms:</label>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <select id="customerPaymentType" style="padding: 8px; border: 1px solid #ccc;">
+                                    <option value="days">Pay in Days</option>
+                                    <option value="end">End of Month</option>
+                                </select>
+                                <input type="number" id="customerPaymentDays" value="30"
+                                    style="width: 60px; padding: 8px; border: 1px solid #ccc;">
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-top: 10px;">
+                            <label>Method:</label>
+                            <select id="customerMethod" style="width: 100%; padding: 8px; border: 1px solid #ccc;">
+                                <option value="cash">Cash</option>
+                                <option value="bank">Bank Transfer</option>
+                                <option value="card">Credit Card</option>
+                                <option value="cheque">Cheque</option>
                             </select>
                         </div>
-                    </div>
-                </header>
-
-                <main class="invoice-paper">
-                    <!-- Watermark Overlay -->
-                    <div class="watermark-overlay" id="watermarkOverlay" style="display:none;">
-                        <span id="watermarkText">DRAFT</span>
-                    </div>
-                    <div class="invoice-top">
-                        <div class="company-section editable-section">
-                            <div class="company-header">
-                                <div class="company-logo" id="companyLogoDisplay" style="display:none;">
-                                    <img id="logoImage" src="" alt="Company Logo">
-                                </div>
-                                <div class="company-info">
-                                    <input type="text" id="companyName" placeholder="Your Company Name"
-                                        value="Tech Solutions Inc.">
-                                    <textarea id="companyDetails"
-                                        placeholder="123 Business Rd&#10;City, Country&#10;contact@example.com"
-                                        rows="3">123 Business Rd&#10;City, Country&#10;contact@example.com</textarea>
-                                </div>
-                            </div>
+                        <div class="form-group" style="margin-top: 10px;">
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox" id="customerTaxExempt">
+                                Set tax exempt for this customer
+                            </label>
                         </div>
-                        <div class="invoice-title-block">
-                            <h2 id="invoiceTitleText">INVOICE</h2>
-                            <div class="meta-grid">
-                                <div class="meta-item">
-                                    <label>Invoice #</label>
-                                    <input type="text" id="invoiceNumber" value="INV-001">
-                                </div>
-                                <div class="meta-item">
-                                    <label>Date</label>
-                                    <input type="date" id="invoiceDate">
-                                </div>
-                                <div class="meta-item" id="dueDateRow">
-                                    <label>Due Date</label>
-                                    <input type="date" id="dueDate">
-                                </div>
-                                <div class="meta-item" id="poNumberRow">
-                                    <label>PO #</label>
-                                    <input type="text" id="poNumber" placeholder="Optional">
-                                </div>
-                                <div class="meta-item" id="salespersonRow" style="display:none;">
-                                    <label>Salesperson</label>
-                                    <input type="text" id="salesperson" placeholder="Name">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="addresses-section">
-                        <div class="bill-to-section editable-section">
-                            <h3>Bill To</h3>
-                            <input type="text" id="clientName" placeholder="Client Company Name">
-                            <textarea id="clientDetails" placeholder="Client Address&#10;City, Country"
-                                rows="3"></textarea>
-                        </div>
-                        <div class="ship-to-section editable-section" id="shipToSection" style="display:none;">
-                            <h3>Ship To</h3>
-                            <input type="text" id="shipToName" placeholder="Recipient Name">
-                            <textarea id="shipToDetails" placeholder="Shipping Address&#10;City, Country"
-                                rows="3"></textarea>
-                            <div class="same-as-billing no-print">
-                                <label><input type="checkbox" id="sameAsBilling"> Same as billing</label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="items-section">
-                        <table id="itemsTable">
-                            <thead>
-                                <tr>
-                                    <th class="col-code" style="display:none;">Code</th>
-                                    <th class="col-desc">Description</th>
-                                    <th class="col-qty">Qty</th>
-                                    <th class="col-price">Price</th>
-                                    <th class="col-item-tax" style="display:none;">Tax %</th>
-                                    <th class="col-total">Amount</th>
-                                    <th class="col-action no-print"></th>
-                                </tr>
-                            </thead>
-                            <tbody id="itemsList">
-                                <!-- Items will be added here -->
-                            </tbody>
-                        </table>
-                        <div class="item-buttons no-print">
-                            <button id="addItemBtn" class="btn btn-outlined">
-                                <span class="icon">+</span> Add Item
-                            </button>
-                        </div>
-
-                        <div class="totals-section">
-                            <div class="total-row">
-                                <span class="label">Subtotal</span>
-                                <span class="value" id="subtotalDisplay">$0.00</span>
-                            </div>
-                            <div class="total-row discount-row">
-                                <span class="label">Discount (%) <input type="number" id="discountRate" value="0"
-                                        min="0" max="100" step="0.5" class="discount-input"></span>
-                                <span class="value" id="discountDisplay">-$0.00</span>
-                            </div>
-                            <div class="total-row shipping-row" id="shippingTotalRow" style="display:none;">
-                                <span class="label">Shipping</span>
-                                <span class="value" id="shippingDisplay">$0.00</span>
-                            </div>
-                            <div class="total-row tax-row">
-                                <span class="label" id="taxLabelDisplay">Tax (%) <input type="number" id="taxRate"
-                                        value="0" min="0" step="0.1" class="tax-input"></span>
-                                <span class="value" id="taxDisplay">$0.00</span>
-                            </div>
-                            <div class="total-row grand-total">
-                                <span class="label">Total</span>
-                                <span class="value" id="grandTotalDisplay">$0.00</span>
-                            </div>
-                            <div class="add-adjustments no-print">
-                                <button id="addDiscountBtn" class="btn btn-outlined btn-discount btn-sm">
-                                    <span class="icon">%</span> Add Discount
-                                </button>
-                                <button id="addShippingBtn" class="btn btn-outlined btn-shipping btn-sm">
-                                    <span class="icon">📦</span> Add Shipping
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="invoice-footer">
-                        <div class="footer-grid">
-                            <!-- Notes Tabs -->
-                            <div class="notes-tabs-section">
-                                <div class="notes-tabs no-print">
-                                    <button class="notes-tab active" data-tab="public">Public Note</button>
-                                    <button class="notes-tab" data-tab="private">Private Note</button>
-                                    <button class="notes-tab" data-tab="footer">Footer Note</button>
-                                </div>
-                                <div class="notes-content">
-                                    <textarea id="publicNote" class="notes-field note-tab-content active"
-                                        placeholder="Thank you for your business. Payment is due within 30 days."></textarea>
-                                    <textarea id="privateNote" class="notes-field note-tab-content no-print"
-                                        placeholder="Internal notes (not visible on invoice)..."
-                                        style="display:none;"></textarea>
-                                    <textarea id="footerNote" class="notes-field note-tab-content footer-note"
-                                        placeholder="Terms & conditions, return policy, etc..."
-                                        style="display:none;"></textarea>
-                                </div>
-                            </div>
-                            <div class="payment-info-section" id="paymentInfoSection" style="display:none;">
-                                <h3>Payment Information</h3>
-                                <div class="payment-details">
-                                    <p><strong>Terms:</strong> <span id="paymentTermsDisplay">Net 30</span></p>
-                                    <p id="bankNameDisplay" style="display:none;"><strong>Bank:</strong> <span></span>
-                                    </p>
-                                    <p id="accountDisplay" style="display:none;"><strong>Account:</strong> <span></span>
-                                    </p>
-                                    <p id="routingDisplay" style="display:none;"><strong>Routing:</strong> <span></span>
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Footer Note Display (for print) -->
-                        <div class="footer-note-display" id="footerNoteDisplay"></div>
-                    </div>
-                </main>
-
-                <!-- Action Buttons -->
-                <div class="actions-bar no-print">
-                    <div class="actions-left">
-                        <button id="clearBtn" class="btn btn-secondary">🗑️ Clear Invoice</button>
-                    </div>
-                    <div class="actions-right">
-                        <button id="previewBtn" class="btn btn-secondary">👁️ Preview</button>
-                        <button id="emailBtn" class="btn btn-secondary">📧 Email</button>
-                        <button id="printBtn" class="btn btn-primary">📥 Save as PDF</button>
                     </div>
                 </div>
+            </div>
+            <div class="modal-footer">
+                <button id="saveCustomer" class="btn btn-primary" style="background: #449d44;">Save Customer</button>
+                <button id="cancelNewCustomer" class="btn btn-secondary">Cancel</button>
             </div>
         </div>
+    </div>
 
-        <!-- Preview Modal -->
-        <div class="modal-overlay" id="previewModal" style="display:none;">
-            <div class="modal-container preview-modal">
-                <div class="modal-header">
-                    <h3>Invoice Preview</h3>
-                    <button class="modal-close" id="closePreview">&times;</button>
+    <!-- Recurring Invoice Schedule Modal -->
+    <div class="modal-overlay" id="recurringModal" style="display:none;">
+        <div class="modal-container modal-medium" style="max-width: 480px;">
+            <div class="modal-header">
+                <h3>Recurring Invoice Schedule</h3>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <a href="#" style="font-size: 12px;">Help</a>
+                    <button class="modal-close" id="closeRecurring">&times;</button>
                 </div>
-                <div class="modal-body" id="previewContent">
-                    <!-- Preview content will be injected here -->
+            </div>
+            <div class="modal-body">
+                <div class="form-group" style="display: flex; align-items: center; gap: 20px; margin-bottom: 15px;">
+                    <label style="min-width: 80px;">Start Date:</label>
+                    <input type="date" id="recurringStartDate" style="padding: 8px; border: 1px solid #ccc;">
                 </div>
-                <div class="modal-footer">
-                    <button id="previewPrint" class="btn btn-primary">📥 Save as PDF</button>
+                <div class="form-group" style="display: flex; align-items: center; gap: 20px; margin-bottom: 15px;">
+                    <label style="min-width: 80px;">Interval:</label>
+                    <select id="recurringInterval" style="width: 150px; padding: 8px; border: 1px solid #ccc;">
+                        <option value="1">Monthly</option>
+                        <option value="3">3 Monthly</option>
+                        <option value="6" selected>6 Monthly</option>
+                        <option value="12">Yearly</option>
+                    </select>
                 </div>
+                <div class="form-group" style="display: flex; align-items: center; gap: 20px; margin-bottom: 20px;">
+                    <label style="min-width: 80px;">Action:</label>
+                    <select id="recurringAction" style="width: 150px; padding: 8px; border: 1px solid #ccc;">
+                        <option value="record">Just record</option>
+                        <option value="email">Email customer</option>
+                        <option value="print">Print invoice</option>
+                    </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 10px;">
+                    <label style="display: flex; align-items: flex-start; gap: 8px;">
+                        <input type="checkbox" id="updatePrices" style="margin-top: 3px;">
+                        Update the prices of any items which have been changed
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label style="display: flex; align-items: flex-start; gap: 8px;">
+                        <input type="checkbox" id="replacePeriod" style="margin-top: 3px;">
+                        Replace the string %period% in any descriptions with dates
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="recordRecurring" class="btn btn-primary" style="background: #449d44;">Record</button>
+                <button id="cancelRecurring" class="btn btn-secondary">Cancel</button>
             </div>
         </div>
+    </div>
 
-        <!-- Email Modal -->
-        <div class="modal-overlay" id="emailModal" style="display:none;">
-            <div class="modal-container email-modal">
-                <div class="modal-header">
-                    <h3>📧 Email Invoice</h3>
-                    <button class="modal-close" id="closeEmail">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label for="emailTo">To:</label>
-                        <input type="email" id="emailTo" class="modal-input" placeholder="client@example.com">
-                    </div>
-                    <div class="form-group">
-                        <label for="emailSubject">Subject:</label>
-                        <input type="text" id="emailSubject" class="modal-input"
-                            value="Invoice from Tech Solutions Inc.">
-                    </div>
-                    <div class="form-group">
-                        <label for="emailMessage">Message:</label>
-                        <textarea id="emailMessage" class="modal-input modal-textarea"
-                            rows="4">Please find attached your invoice. Thank you for your business!</textarea>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button id="cancelEmail" class="btn btn-secondary">Cancel</button>
-                    <button id="sendEmail" class="btn btn-primary">Send Invoice</button>
-                </div>
+    <!-- Invoice Field Names Modal -->
+    <div class="modal-overlay" id="fieldNamesModal" style="display:none;">
+        <div class="modal-container modal-medium" style="max-width: 480px;">
+            <div class="modal-header">
+                <h3>Invoice Field Names</h3>
+                <button class="modal-close" id="closeFieldNames">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 15px; font-size: 14px; color: #333; line-height: 1.5;">
+                    Invoice labels can be changed in Invoice Text Settings. For example, [Purchase Order #] could be
+                    changed to [Job #] or [Work #] to meet your business needs.
+                </p>
+                <p style="margin-bottom: 20px; font-size: 14px; color: #333;">
+                    Custom Fields can be added in Invoice Settings.
+                </p>
+            </div>
+            <div class="modal-footer" style="flex-wrap: wrap; gap: 10px;">
+                <button id="invoiceTextSettings" class="btn btn-primary" style="background: #449d44;">Invoice Text
+                    Settings</button>
+                <button id="invoiceSettings" class="btn btn-primary" style="background: #449d44;">Invoice
+                    Settings</button>
+                <button id="continueCreating" class="btn btn-primary" style="background: #449d44;">Continue Creating
+                    Invoice</button>
             </div>
         </div>
+    </div>
 
-        <!-- Properties Toolbox Panel -->
-        <aside class="toolbox-panel no-print" id="toolboxPanel">
-            <div class="toolbox-header">
-                <h3>⚙️ Properties</h3>
-                <button class="toolbox-toggle" id="toolboxToggle" title="Toggle Panel">◀</button>
+    <!-- Apply Payment Modal -->
+    <div class="modal-overlay" id="paymentModal" style="display:none;">
+        <div class="modal-container modal-medium" style="max-width: 420px;">
+            <div class="modal-header">
+                <h3>Apply Payment</h3>
+                <button class="modal-close" id="closePayment">&times;</button>
             </div>
-
-            <div class="toolbox-content">
-                <!-- Document Settings Section -->
-                <div class="toolbox-section">
-                    <h4>📄 Document Settings</h4>
-                    <div class="property-group">
-                        <label for="documentType">Document Type</label>
-                        <select id="documentType" class="toolbox-select">
-                            <option value="INVOICE">Invoice</option>
-                            <option value="QUOTE">Quote</option>
-                            <option value="ESTIMATE">Estimate</option>
-                            <option value="RECEIPT">Receipt</option>
-                            <option value="PROFORMA">Proforma Invoice</option>
-                            <option value="CREDIT NOTE">Credit Note</option>
-                        </select>
-                    </div>
-                    <div class="property-group">
-                        <label for="invoicePrefix">Number Prefix</label>
-                        <input type="text" id="invoicePrefix" class="toolbox-input" value="INV-" placeholder="INV-">
-                    </div>
-                    <div class="property-group">
-                        <label for="dateFormat">Date Format</label>
-                        <select id="dateFormat" class="toolbox-select">
-                            <option value="default">Browser Default</option>
-                            <option value="MM/DD/YYYY">MM/DD/YYYY</option>
-                            <option value="DD/MM/YYYY">DD/MM/YYYY</option>
-                            <option value="YYYY-MM-DD">YYYY-MM-DD</option>
-                            <option value="DD MMM YYYY">DD MMM YYYY</option>
-                        </select>
-                    </div>
-                    <div class="property-group checkbox-group">
-                        <label>
-                            <input type="checkbox" id="showDueDate" checked>
-                            <span>Show due date</span>
-                        </label>
-                    </div>
-                    <div class="property-group checkbox-group">
-                        <label>
-                            <input type="checkbox" id="autoNumbering">
-                            <span>Auto-increment number</span>
-                        </label>
-                    </div>
+            <div class="modal-body">
+                <div class="form-group" style="display: flex; align-items: center; gap: 20px; margin-bottom: 15px;">
+                    <label style="min-width: 120px;">Payment Amount:</label>
+                    <input type="text" id="paymentAmount" value="RM0.00"
+                        style="flex: 1; padding: 8px; border: 1px solid #ccc;">
                 </div>
-
-                <!-- Watermark Section -->
-                <div class="toolbox-section">
-                    <h4>💧 Watermark</h4>
-                    <div class="property-group checkbox-group">
-                        <label>
-                            <input type="checkbox" id="enableWatermark">
-                            <span>Enable watermark</span>
-                        </label>
-                    </div>
-                    <div class="property-group">
-                        <label for="watermarkType">Watermark Text</label>
-                        <select id="watermarkType" class="toolbox-select">
-                            <option value="DRAFT">DRAFT</option>
-                            <option value="PAID">PAID</option>
-                            <option value="CANCELLED">CANCELLED</option>
-                            <option value="CONFIDENTIAL">CONFIDENTIAL</option>
-                            <option value="COPY">COPY</option>
-                            <option value="SAMPLE">SAMPLE</option>
-                            <option value="custom">Custom...</option>
-                        </select>
-                    </div>
-                    <div class="property-group" id="customWatermarkGroup" style="display:none;">
-                        <input type="text" id="customWatermark" class="toolbox-input"
-                            placeholder="Custom watermark text">
-                    </div>
-                    <div class="property-group">
-                        <label for="watermarkColor">Watermark Color</label>
-                        <input type="color" id="watermarkColor" value="#ef4444">
-                    </div>
-                    <div class="property-group">
-                        <label for="watermarkOpacity">Opacity</label>
-                        <div class="slider-group">
-                            <input type="range" id="watermarkOpacity" min="5" max="50" step="5" value="15">
-                            <span class="slider-value" id="watermarkOpacityVal">15%</span>
-                        </div>
-                    </div>
+                <div class="form-group" style="display: flex; align-items: center; gap: 20px; margin-bottom: 15px;">
+                    <label style="min-width: 120px;">Method:</label>
+                    <select id="paymentMethod" style="flex: 1; padding: 8px; border: 1px solid #ccc;">
+                        <option value="cash">Cash</option>
+                        <option value="bank">Bank Transfer</option>
+                        <option value="card">Credit Card</option>
+                        <option value="cheque">Cheque</option>
+                    </select>
                 </div>
-
-                <!-- Logo Upload Section -->
-                <div class="toolbox-section">
-                    <h4>🖼️ Company Logo</h4>
-                    <div class="property-group">
-                        <div class="logo-upload-area" id="logoUploadArea">
-                            <input type="file" id="logoInput" accept="image/*" hidden>
-                            <div class="logo-preview" id="logoPreview">
-                                <span class="upload-placeholder">📷 Click to upload logo</span>
-                            </div>
-                            <button class="btn-small" id="removeLogo" style="display:none;">Remove Logo</button>
-                        </div>
-                    </div>
-                    <div class="property-group">
-                        <label for="logoSize">Logo Size</label>
-                        <div class="slider-group">
-                            <input type="range" id="logoSize" min="40" max="120" step="5" value="80">
-                            <span class="slider-value" id="logoSizeVal">80px</span>
-                        </div>
-                    </div>
-                    <div class="property-group">
-                        <label for="logoPosition">Logo Position</label>
-                        <select id="logoPosition" class="toolbox-select">
-                            <option value="left">Left of Company Name</option>
-                            <option value="top">Above Company Name</option>
-                            <option value="right">Right Side</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Font Family Section -->
-                <div class="toolbox-section">
-                    <h4>🔤 Font Family</h4>
-                    <div class="property-group">
-                        <label for="fontFamily">Primary Font</label>
-                        <select id="fontFamily" class="toolbox-select">
-                            <option value="'Outfit', sans-serif">Outfit (Default)</option>
-                            <option value="'Inter', sans-serif">Inter</option>
-                            <option value="'Roboto', sans-serif">Roboto</option>
-                            <option value="'Open Sans', sans-serif">Open Sans</option>
-                            <option value="'Poppins', sans-serif">Poppins</option>
-                            <option value="'Montserrat', sans-serif">Montserrat</option>
-                            <option value="'Lato', sans-serif">Lato</option>
-                            <option value="Georgia, serif">Georgia (Serif)</option>
-                            <option value="'Times New Roman', serif">Times New Roman</option>
-                            <option value="'Courier New', monospace">Courier New</option>
-                        </select>
-                    </div>
-                    <div class="property-group">
-                        <label for="headingWeight">Heading Weight</label>
-                        <select id="headingWeight" class="toolbox-select">
-                            <option value="400">Light (400)</option>
-                            <option value="500">Medium (500)</option>
-                            <option value="600">Semi-Bold (600)</option>
-                            <option value="700" selected>Bold (700)</option>
-                            <option value="800">Extra Bold (800)</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Typography Section -->
-                <div class="toolbox-section">
-                    <h4>📏 Typography</h4>
-
-                    <div class="property-group">
-                        <label for="companyNameSize">Company Name Size</label>
-                        <div class="slider-group">
-                            <input type="range" id="companyNameSize" min="1" max="3" step="0.1" value="2">
-                            <span class="slider-value" id="companyNameSizeVal">2rem</span>
-                        </div>
-                    </div>
-
-                    <div class="property-group">
-                        <label for="bodyTextSize">Body Text Size</label>
-                        <div class="slider-group">
-                            <input type="range" id="bodyTextSize" min="0.75" max="1.25" step="0.05" value="0.95">
-                            <span class="slider-value" id="bodyTextSizeVal">0.95rem</span>
-                        </div>
-                    </div>
-
-                    <div class="property-group">
-                        <label for="invoiceTitleSize">Title Size</label>
-                        <div class="slider-group">
-                            <input type="range" id="invoiceTitleSize" min="2" max="4" step="0.1" value="3">
-                            <span class="slider-value" id="invoiceTitleSizeVal">3rem</span>
-                        </div>
-                    </div>
-
-                    <div class="property-group">
-                        <label for="lineHeight">Line Height</label>
-                        <div class="slider-group">
-                            <input type="range" id="lineHeight" min="1" max="2" step="0.1" value="1.6">
-                            <span class="slider-value" id="lineHeightVal">1.6</span>
-                        </div>
-                    </div>
-
-                    <div class="property-group">
-                        <label for="letterSpacing">Letter Spacing</label>
-                        <div class="slider-group">
-                            <input type="range" id="letterSpacing" min="-1" max="3" step="0.25" value="0">
-                            <span class="slider-value" id="letterSpacingVal">0px</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Colors Section -->
-                <div class="toolbox-section">
-                    <h4>🎨 Colors</h4>
-
-                    <div class="color-grid">
-                        <div class="property-group">
-                            <label for="accentColor">Accent</label>
-                            <input type="color" id="accentColor" value="#2563eb">
-                        </div>
-
-                        <div class="property-group">
-                            <label for="textColor">Text</label>
-                            <input type="color" id="textColor" value="#1e293b">
-                        </div>
-
-                        <div class="property-group">
-                            <label for="bgColor">Background</label>
-                            <input type="color" id="bgColor" value="#f8fafc">
-                        </div>
-
-                        <div class="property-group">
-                            <label for="paperColor">Paper</label>
-                            <input type="color" id="paperColor" value="#ffffff">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Table Styling Section -->
-                <div class="toolbox-section">
-                    <h4>📊 Table Styling</h4>
-
-                    <div class="property-group">
-                        <label for="tableHeaderBg">Header Background</label>
-                        <input type="color" id="tableHeaderBg" value="#f1f5f9">
-                    </div>
-
-                    <div class="property-group">
-                        <label for="tableHeaderText">Header Text</label>
-                        <input type="color" id="tableHeaderText" value="#64748b">
-                    </div>
-
-                    <div class="property-group">
-                        <label for="tableAltRow">Alternate Row</label>
-                        <input type="color" id="tableAltRow" value="#fafafa">
-                    </div>
-
-                    <div class="property-group checkbox-group">
-                        <label>
-                            <label for="paperPadding">Paper Padding</label>
-                            <div class="slider-group">
-                                <input type="range" id="paperPadding" min="2" max="6" step="0.5" value="4">
-                                <span class="slider-value" id="paperPaddingVal">4rem</span>
-                            </div>
-                    </div>
-
-                    <div class="property-group">
-                        <label for="sectionSpacing">Section Spacing</label>
-                        <div class="slider-group">
-                            <input type="range" id="sectionSpacing" min="1" max="5" step="0.5" value="3">
-                            <span class="slider-value" id="sectionSpacingVal">3rem</span>
-                        </div>
-                    </div>
-
-                    <div class="property-group">
-                        <label for="tableRowPadding">Table Row Padding</label>
-                        <div class="slider-group">
-                            <input type="range" id="tableRowPadding" min="0.5" max="2" step="0.25" value="1">
-                            <span class="slider-value" id="tableRowPaddingVal">1rem</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Border Section -->
-                <div class="toolbox-section">
-                    <h4>✨ Border & Effects</h4>
-
-                    <div class="property-group">
-                        <label for="borderWidth">Top Border Width</label>
-                        <div class="slider-group">
-                            <input type="range" id="borderWidth" min="0" max="12" step="1" value="8">
-                            <span class="slider-value" id="borderWidthVal">8px</span>
-                        </div>
-                    </div>
-
-                    <div class="property-group">
-                        <label for="borderRadius">Corner Radius</label>
-                        <div class="slider-group">
-                            <input type="range" id="borderRadius" min="0" max="24" step="2" value="12">
-                            <span class="slider-value" id="borderRadiusVal">12px</span>
-                        </div>
-                    </div>
-
-                    <div class="property-group">
-                        <label for="shadowIntensity">Shadow Intensity</label>
-                        <div class="slider-group">
-                            <input type="range" id="shadowIntensity" min="0" max="100" step="5" value="50">
-                            <span class="slider-value" id="shadowIntensityVal">50%</span>
-                        </div>
-                    </div>
-
-                    <div class="property-group">
-                        <label for="borderStyle">Border Style</label>
-                        <select id="borderStyle" class="toolbox-select">
-                            <option value="solid">Solid</option>
-                            <option value="double">Double</option>
-                            <option value="groove">Groove</option>
-                            <option value="ridge">Ridge</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Payment Details Section -->
-                <div class="toolbox-section">
-                    <h4>💳 Payment Details</h4>
-
-                    <div class="property-group">
-                        <label for="paymentTerms">Payment Terms</label>
-                        <select id="paymentTerms" class="toolbox-select">
-                            <option value="Due on Receipt">Due on Receipt</option>
-                            <option value="Net 15">Net 15</option>
-                            <option value="Net 30" selected>Net 30</option>
-                            <option value="Net 45">Net 45</option>
-                            <option value="Net 60">Net 60</option>
-                            <option value="Custom">Custom</option>
-                        </select>
-                    </div>
-
-                    <div class="property-group checkbox-group">
-                        <label>
-                            <input type="checkbox" id="showPaymentInfo">
-                            <span>Show bank details</span>
-                        </label>
-                    </div>
-
-                    <div class="property-group bank-details-group" id="bankDetailsGroup" style="display:none;">
-                        <input type="text" id="bankName" class="toolbox-input" placeholder="Bank Name">
-                        <input type="text" id="accountNumber" class="toolbox-input" placeholder="Account Number">
-                        <input type="text" id="routingNumber" class="toolbox-input" placeholder="Routing/SWIFT">
-                    </div>
-                </div>
-
-                <!-- Quick Presets Section -->
-                <div class="toolbox-section">
-                    <h4>🎯 Quick Presets</h4>
-                    <div class="preset-buttons">
-                        <button class="preset-btn" data-preset="professional">Professional</button>
-                        <button class="preset-btn" data-preset="colorful">Colorful</button>
-                        <button class="preset-btn" data-preset="elegant">Elegant</button>
-                        <button class="preset-btn" data-preset="bold">Bold</button>
-                    </div>
-                </div>
-
-                <!-- Reset Button -->
-                <div class="toolbox-section">
-                    <button id="resetProperties" class="btn btn-outlined toolbox-reset">
-                        🔄 Reset to Default
-                    </button>
+                <div class="form-group" style="display: flex; align-items: center; gap: 20px;">
+                    <label style="min-width: 120px;">Reference Number:</label>
+                    <input type="text" id="paymentReference" style="flex: 1; padding: 8px; border: 1px solid #ccc;">
                 </div>
             </div>
-        </aside>
+            <div class="modal-footer">
+                <button id="applyPaymentBtn" class="btn btn-primary" style="background: #449d44;">Apply Payment</button>
+                <button id="cancelPayment" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invoice Text Settings Modal -->
+    <div class="modal-overlay" id="textSettingsModal" style="display:none;">
+        <div class="modal-container modal-large" style="max-width: 600px; max-height: 90vh; overflow: auto;">
+            <div class="modal-header">
+                <h3 style="font-size: 1.5rem; font-weight: normal; color: #333;">Invoice Text Settings</h3>
+                <button class="modal-close" id="closeTextSettings">&times;</button>
+            </div>
+            <div class="modal-body" style="padding: 0;">
+                <!-- Tabs -->
+                <div style="display: flex; border-bottom: 1px solid #ccc;">
+                    <button class="settings-tab active" data-tab="text"
+                        style="padding: 10px 20px; border: 1px solid #ccc; border-bottom: none; background: white; cursor: pointer;">Text</button>
+                    <button class="settings-tab" data-tab="attributes"
+                        style="padding: 10px 20px; border: 1px solid #ccc; border-bottom: none; background: #f5f5f5; cursor: pointer;">Text
+                        Attributes</button>
+                </div>
+
+                <!-- Text Tab Content -->
+                <div id="textTabContent" style="padding: 15px;">
+                    <p style="color: #c00; font-size: 12px; margin-bottom: 15px;">In order to change the desired heading
+                        just click on the right column text.</p>
+
+                    <div class="settings-row"><label>Invoice Title:</label><input type="text" id="txtInvoiceTitle"
+                            value="Invoice"></div>
+                    <div class="settings-row"><label>Invoice Date Title:</label><input type="text" id="txtDateTitle"
+                            value="Date"></div>
+                    <div class="settings-row"><label>Invoice Number Title:</label><input type="text" id="txtNumberTitle"
+                            value="Invoice No."></div>
+                    <div class="settings-row"><label>Due Date Title:</label><input type="text" id="txtDueDateTitle"
+                            value="Due Date"></div>
+                    <div class="settings-row"><label>Purchase Order Title:</label><input type="text" id="txtPOTitle"
+                            value="P.O. #"></div>
+                    <div class="settings-row"><label>Billing Address Title:</label><input type="text"
+                            id="txtBillingTitle" value="Bill To"></div>
+                    <div class="settings-row"><label>Shipping Address Title:</label><input type="text"
+                            id="txtShippingTitle" value="Ship To"></div>
+                    <div class="settings-row"><label>Salesperson Title:</label><input type="text"
+                            id="txtSalespersonTitle" value="Salesperson"></div>
+                    <div class="settings-row"><label>Quantity Column Title:</label><input type="text" id="txtQtyTitle"
+                            value="Qty"></div>
+                    <div class="settings-row"><label>Item Code Title:</label><input type="text" id="txtItemCodeTitle"
+                            value="Item Code"></div>
+                    <div class="settings-row"><label>Description Title:</label><input type="text" id="txtDescTitle"
+                            value="Description"></div>
+                    <div class="settings-row"><label>Unit Price Column Title:</label><input type="text"
+                            id="txtUnitPriceTitle" value="Unit Price"></div>
+                    <div class="settings-row"><label>Discount Column Title:</label><input type="text"
+                            id="txtDiscountColTitle" value="Discount"></div>
+                    <div class="settings-row"><label>Sales Tax Column Title:</label><input type="text"
+                            id="txtTaxColTitle" value="Tax"></div>
+                    <div class="settings-row"><label>Total Column Title:</label><input type="text" id="txtTotalColTitle"
+                            value="Total"></div>
+                    <div class="settings-row"><label>Shipping Costs Title:</label><input type="text"
+                            id="txtShippingCostTitle" value="Shipping"></div>
+                    <div class="settings-row"><label>Subtotal Title:</label><input type="text" id="txtSubtotalTitle"
+                            value="Subtotal"></div>
+                    <div class="settings-row"><label>Discount Title:</label><input type="text" id="txtDiscountTitle"
+                            value="Discount"></div>
+                    <div class="settings-row"><label>Total Title:</label><input type="text" id="txtTotalTitle"
+                            value="Total"></div>
+                    <div class="settings-row"><label>Paid Title:</label><input type="text" id="txtPaidTitle"
+                            value="Paid"></div>
+                    <div class="settings-row"><label>Balance Title:</label><input type="text" id="txtBalanceTitle"
+                            value="Balance"></div>
+                    <div class="settings-row"><label>Public Note Header:</label><input type="text"
+                            id="txtPublicNoteHeader" placeholder="Enter Public Note Header"></div>
+                    <div class="settings-row"><label>Foot Note Header:</label><input type="text" id="txtFootNoteHeader"
+                            placeholder="Enter Foot Note Header"></div>
+                </div>
+
+                <!-- Text Attributes Tab Content -->
+                <div id="attributesTabContent" style="padding: 15px; display: none;">
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="radio" name="textAttrType" value="global">
+                            Use global text attributes
+                        </label>
+                        <button class="btn btn-secondary" style="margin-left: 25px; margin-top: 5px;">Global
+                            Attributes...</button>
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="radio" name="textAttrType" value="section" checked>
+                            Set text attribute for each section
+                        </label>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-left: 25px;">
+                        <button class="btn btn-secondary">Invoice Title...</button>
+                        <button class="btn btn-secondary">Company Name...</button>
+                        <button class="btn btn-secondary">Heading Text...</button>
+                        <button class="btn btn-secondary">Table Heading Text...</button>
+                        <button class="btn btn-secondary">All Other Text...</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="saveTextSettings" class="btn btn-primary" style="background: #449d44;">Save
+                    Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invoice Settings Modal -->
+    <div class="modal-overlay" id="invoiceSettingsModal" style="display:none;">
+        <div class="modal-container modal-large" style="max-width: 700px; max-height: 90vh; overflow: auto;">
+            <div class="modal-header" style="position: sticky; top: 0; background: white; z-index: 10;">
+                <h3 style="font-size: 1.5rem; font-weight: normal; color: #333;">Invoice Settings</h3>
+                <div>
+                    <button id="saveInvoiceSettingsTop" class="btn btn-primary" style="background: #449d44;">Save
+                        Settings</button>
+                    <button class="modal-close" id="closeInvoiceSettings">&times;</button>
+                </div>
+            </div>
+            <div class="modal-body" style="padding: 20px;">
+                <!-- Invoice, Credit Note, and Quote Options -->
+                <h4 style="color: #333; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 10px;">
+                    Invoice, Credit Note, and Quote Options</h4>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" id="setShowItemCode"> Show Item Code column</label>
+                    <label><input type="checkbox" id="setShowDiscount"> Show Discount column</label>
+                    <label><input type="checkbox" id="setPrintSalesperson"> Print salesperson name</label>
+                    <label><input type="checkbox" id="setHideBillShip"> Hide Bill To and Ship To labels</label>
+                    <label><input type="checkbox" id="setReplaceText"> Replace %TEXT% in comments (see Help)</label>
+                    <label><input type="checkbox" id="setAlwaysShipping" checked> Always display shipping
+                        address</label>
+                </div>
+
+                <!-- Invoice Options -->
+                <h4 style="color: #333; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin: 20px 0 10px;">
+                    Invoice Options</h4>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" id="setPrintDueDate" checked> Print Due Date</label>
+                    <label><input type="checkbox" id="setAddPaid"> Add 'Paid' text on Invoices that have been
+                        paid</label>
+                    <label><input type="checkbox" id="setAddOverdue"> Add 'Overdue' text on Invoices that are
+                        overdue</label>
+                    <label><input type="checkbox" id="setFullHeight"> Invoice Items table uses full page height</label>
+                    <label><input type="checkbox" id="setPrintQR"> Print Payment QR Code on Invoice</label>
+                </div>
+
+                <!-- Invoice Numbering -->
+                <h4 style="color: #333; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin: 20px 0 10px;">
+                    Invoice Numbering</h4>
+                <div class="settings-row"><label>Prefix (optional):</label><input type="text" id="setNumberPrefix"
+                        placeholder="Enter Prefix"></div>
+                <div class="settings-row"><label>Number:</label><input type="number" id="setStartNumber" value="10001">
+                </div>
+
+                <!-- Custom Fields -->
+                <h4 style="color: #333; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin: 20px 0 10px;">Custom
+                    Fields</h4>
+                <p style="font-size: 12px; color: #666; margin-bottom: 10px;">Add additional fields that you want to add
+                    at the top or bottom of the invoice.</p>
+                <div class="settings-row">
+                    <label>Custom Field 1:</label>
+                    <input type="text" id="customField1" style="flex: 2;">
+                    <select id="customField1Pos" style="width: 80px; padding: 8px; border: 1px solid #ccc;">
+                        <option>Top</option>
+                        <option>Bottom</option>
+                    </select>
+                </div>
+                <div class="settings-row">
+                    <label>Custom Field 2:</label>
+                    <input type="text" id="customField2" style="flex: 2;">
+                    <select id="customField2Pos" style="width: 80px; padding: 8px; border: 1px solid #ccc;">
+                        <option>Top</option>
+                        <option>Bottom</option>
+                    </select>
+                </div>
+
+                <!-- Comments -->
+                <h4 style="color: #333; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin: 20px 0 10px;">
+                    Comments</h4>
+                <div class="settings-row" style="align-items: flex-start;">
+                    <label>Invoice public note / Bank details:</label>
+                    <textarea id="setPublicNote" rows="2" placeholder="Enter Public Note"
+                        style="flex: 1; padding: 8px; border: 1px solid #ccc;"></textarea>
+                </div>
+                <div class="settings-row">
+                    <label>Alignment/Font size:</label>
+                    <select style="padding: 8px; border: 1px solid #ccc;">
+                        <option>Left</option>
+                        <option>Center</option>
+                        <option>Right</option>
+                    </select>
+                    <select style="padding: 8px; border: 1px solid #ccc;">
+                        <option>Normal</option>
+                        <option>Small</option>
+                        <option>Large</option>
+                    </select>
+                </div>
+                <div class="settings-row" style="align-items: flex-start;">
+                    <label>Invoice foot note:</label>
+                    <textarea id="setFootNote" rows="2" placeholder="Thank you for your business."
+                        style="flex: 1; padding: 8px; border: 1px solid #ccc;"></textarea>
+                </div>
+
+                <!-- Late Fees -->
+                <h4 style="color: #333; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin: 20px 0 10px;">Late
+                    Fees</h4>
+                <div class="checkbox-group">
+                    <label><input type="radio" name="lateFee" value="none" checked> None</label>
+                    <label><input type="radio" name="lateFee" value="interest"> Interest Rate / month: <input
+                            type="text" value="0.00%"
+                            style="width: 60px; padding: 4px; border: 1px solid #ccc;"></label>
+                    <label><input type="radio" name="lateFee" value="flat"> Flat Fee / month: <input type="text"
+                            value="RM0.00" style="width: 80px; padding: 4px; border: 1px solid #ccc;"></label>
+                </div>
+
+                <!-- Grace Period -->
+                <h4 style="color: #333; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin: 20px 0 10px;">Grace
+                    Period (Days)</h4>
+                <div class="settings-row">
+                    <input type="number" id="gracePeriod" value="14" style="width: 80px;">
+                    <label><input type="checkbox" id="autoCalculate"> Auto-calculate</label>
+                </div>
+
+                <!-- Email Settings -->
+                <h4 style="color: #333; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin: 20px 0 10px;">Email
+                    Settings</h4>
+                <div class="settings-row"><label>Email From:</label><input type="text" id="emailFrom"
+                        placeholder="%BusinessName% via Brisk Invoicing"></div>
+                <div class="settings-row"><label>Email Subject:</label><input type="text" id="emailSubject"
+                        placeholder="%BusinessName%'s %Brisk %DocumentType%"></div>
+                <div class="settings-row" style="align-items: flex-start;">
+                    <label>Default Email Message:</label>
+                    <textarea id="defaultEmailMsg" rows="3" placeholder="Enter Default Email Message"
+                        style="flex: 1; padding: 8px; border: 1px solid #ccc;"></textarea>
+                </div>
+                <div class="checkbox-group" style="margin-top: 10px;">
+                    <label><input type="checkbox" id="autoBcc" checked> Auto BCC All Emails</label>
+                </div>
+                <div class="settings-row"><label>BCC Email Address:</label><input type="email" id="bccEmail"
+                        placeholder="example@gmail.com"></div>
+
+                <!-- Late Payment Reminder -->
+                <h4 style="color: #333; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin: 20px 0 10px;">Late
+                    Payment Reminder</h4>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" id="autoReminder"> Automatically send a reminder</label>
+                </div>
+                <div class="settings-row">
+                    <label>Reminder Date:</label>
+                    <input type="number" value="7" style="width: 60px;"> days
+                    <select style="padding: 8px; border: 1px solid #ccc;">
+                        <option>before the due date</option>
+                        <option>after the due date</option>
+                    </select>
+                </div>
+                <div class="settings-row"><label>Subject:</label><input type="text"
+                        placeholder="Your invoice from %BusinessName% is due"></div>
+                <div class="settings-row" style="align-items: flex-start;">
+                    <label>Body:</label>
+                    <textarea rows="4"
+                        placeholder="Hello %CustomerName%,&#10;Please see the attached PDF invoice for your account.&#10;&#10;Thank you for your business.&#10;Best Regards, %BusinessName%"
+                        style="flex: 1; padding: 8px; border: 1px solid #ccc;"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="saveInvoiceSettings" class="btn btn-primary" style="background: #449d44;">Save
+                    Settings</button>
+            </div>
+        </div>
     </div>
 
     <script src="script.js"></script>
